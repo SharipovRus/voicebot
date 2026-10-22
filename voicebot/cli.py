@@ -5,7 +5,7 @@
   python -m voicebot publish                 — загрузить сценарий в Vapi, чтобы поговорить с ботом в браузере
   python -m voicebot call <номер>            — позвонить и сохранить результат
   python -m voicebot call 87011234567 --dry-run   — показать запрос в Vapi, не звоня
-  python -m voicebot fetch <call_id>         — забрать результат уже прошедшего звонка
+  python -m voicebot fetch [<call_id>]       — забрать результат звонка (без id — последний разговор)
   python -m voicebot report                  — сводка по всем звонкам сценария + HTML-страница
   python -m voicebot site                    — пересобрать демо-страницу в docs/ (GitHub Pages)
 """
@@ -76,7 +76,7 @@ def cmd_publish(args, scenario: Scenario) -> int:
     saved, created = _client().save_assistant(build_assistant(scenario))
     print(f"Ассистент {scenario.name} {'создан' if created else 'обновлён'}.")
     print(f"\nОткройте https://dashboard.vapi.ai/assistants/{saved['id']} и нажмите Talk to Assistant.")
-    print("После разговора результат: python -m voicebot fetch <id звонка из раздела Calls>")
+    print("После разговора результат: python -m voicebot fetch")
     return 0
 
 
@@ -140,10 +140,25 @@ def cmd_call(args, scenario: Scenario) -> int:
 
 
 def cmd_fetch(args, scenario: Scenario) -> int:
-    call = _client().get_call(args.call_id)
+    client = _client()
+    call_id = args.call_id
+    if not call_id:
+        # Без id — последний разговор с ассистентом сценария (тест в браузере или дашборде).
+        assistant = client.find_assistant(build_assistant(scenario)["name"])
+        last = client.last_call(assistant["id"]) if assistant else None
+        if not last:
+            print(f"Разговоров с ассистентом {scenario.name} пока нет: поговорите с ботом на демо-странице.")
+            return 1
+        call_id = last["id"]
+        print(f"Последний разговор: {call_id}")
+
+    call = client.get_call(call_id)
     if call.get("status") != "ended":
         print(f"Звонок ещё идёт (статус: {call.get('status')}), попробуйте позже.")
         return 1
+    if not (call.get("artifact") or {}).get("structuredOutputs"):
+        print("Vapi ещё извлекает ответы из разговора, жду (до минуты)…", flush=True)
+        call = client.wait_for_result(call_id)
     _finish(parse_call(call, scenario))
     return 0
 
@@ -257,7 +272,7 @@ def _parse_args(argv):
     parser = argparse.ArgumentParser(prog="voicebot", description="Голосовой бот: звонит и собирает ответы")
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--scenario", default=DEFAULT_SCENARIO, help="путь к YAML сценария")
-    common.add_argument("--var", type=_parse_var, action="append", default=[], help="переопределить переменную: --var car='Kia Rio'")
+    common.add_argument("--var", type=_parse_var, action="append", default=[], help="переопределить переменную: --var product='кредитную карту'")
     sub = parser.add_subparsers(required=True)
 
     p = sub.add_parser("preview", parents=[common], help="показать промпт и поля результата")
@@ -276,8 +291,8 @@ def _parse_args(argv):
     p.add_argument("--no-wait", action="store_true", help="не ждать окончания звонка")
     p.set_defaults(handler=cmd_call)
 
-    p = sub.add_parser("fetch", parents=[common], help="забрать результат звонка по id")
-    p.add_argument("call_id")
+    p = sub.add_parser("fetch", parents=[common], help="забрать результат звонка (без id — последний разговор)")
+    p.add_argument("call_id", nargs="?", help="id звонка; если не указан — последний разговор с ассистентом сценария")
     p.set_defaults(handler=cmd_fetch)
 
     p = sub.add_parser("report", parents=[common], help="аналитика по всем звонкам сценария")

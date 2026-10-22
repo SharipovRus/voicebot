@@ -108,9 +108,25 @@ python -m voicebot check        # ключ работает?
 python -m voicebot publish      # загрузить сценарий в Vapi (ассистент ищется по имени сценария)
 ```
 
-В дашборде Vapi нажать **Talk to Assistant** и сыграть клиента, который бросил заявку. После разговора
-id звонка есть в разделе Calls, результат забирается так: `python -m voicebot fetch <id>`.
-После правок в YAML снова запустить `publish`, ассистент обновится.
+### Тест без телефона: поговорить, забрать результат, посмотреть аналитику
+
+1. Поговорить с ботом: на [демо-странице](https://sharipovrus.github.io/voicebot/) (нужен
+   микрофон) или в дашборде Vapi → Assistants → **Talk to Assistant**. Сыграть клиента,
+   который бросил заявку.
+2. Забрать результат последнего разговора:
+   ```bash
+   python -m voicebot fetch          # английский: --scenario scenarios/abandoned_application_en.yaml
+   ```
+   Команда сама найдёт последний разговор, дождётся, пока Vapi извлечёт ответы, напечатает
+   их и сохранит в `results/calls/<id>.json` и строкой в `results/abandoned_application.csv`.
+3. Посмотреть аналитику по всем разговорам:
+   ```bash
+   python -m voicebot report         # сводка в терминале + results/abandoned_application_report.html
+   ```
+4. Логи разговора со стороны Vapi (что распознано, что ответила модель, задержки, почему
+   закончился звонок): дашборд Vapi → **Calls** → нужный звонок.
+
+После правок в YAML снова запустить `publish` (или `site` для демо-страницы), ассистент обновится.
 
 Для звонков на телефон дальше нужен номер.
 
@@ -160,7 +176,7 @@ python -m voicebot call 87011234567 --dry-run    # запрос в Vapi без �
 python -m voicebot call <номер>                  # позвонить
 python -m voicebot call <номер> --var product="кредитную карту" --var stopped_at="на шаге выбора тарифа"
 python -m voicebot call +49<номер> --scenario scenarios/abandoned_application_en.yaml   # другая страна — с кодом
-python -m voicebot fetch <call_id>               # забрать результат прошедшего звонка
+python -m voicebot fetch [<call_id>]             # забрать результат звонка (без id — последний разговор)
 python -m voicebot report                        # аналитика по всем звонкам + HTML-страница
 python -m pytest                                 # тесты (без звонков и ключей)
 ```

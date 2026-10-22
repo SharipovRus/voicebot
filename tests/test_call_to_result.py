@@ -78,6 +78,54 @@ def test_csv_gets_new_column_when_question_added(scenario, results_in_tmp):
     assert rows[1]["app_platform"] == "android"
 
 
+def test_fetching_same_call_twice_keeps_one_csv_row(scenario, results_in_tmp):
+    sinks.publish(parse_call(CALL, scenario))
+    sinks.publish(parse_call(CALL, scenario))
+    with (results_in_tmp / CSV_NAME).open(encoding="utf-8-sig") as f:
+        assert len(list(csv.DictReader(f))) == 1
+
+
+class FakeFetchClient:
+    """Vapi с одним разговором в браузере, ответы появляются со второго запроса."""
+
+    def __init__(self, calls_by_assistant):
+        self.calls_by_assistant = calls_by_assistant
+        self.waited = False
+
+    def find_assistant(self, name):
+        return {"id": f"id-{name}"}
+
+    def last_call(self, assistant_id):
+        return self.calls_by_assistant.get(assistant_id)
+
+    def get_call(self, call_id):
+        return {**CALL, "artifact": {"transcript": "..."}}  # ответы ещё не извлечены
+
+    def wait_for_result(self, call_id, **kwargs):
+        self.waited = True
+        return CALL
+
+
+def test_fetch_without_id_takes_last_call_and_waits_for_answers(monkeypatch, results_in_tmp, capsys):
+    from voicebot import cli
+
+    fake = FakeFetchClient({"id-abandoned_application": {"id": CALL["id"]}})
+    monkeypatch.setattr(cli, "_client", lambda: fake)
+    monkeypatch.setattr(cli, "RESULTS_DIR", results_in_tmp)
+    assert main(["fetch", "--scenario", str(SCENARIO)]) == 0
+    assert fake.waited
+    assert (results_in_tmp / "calls" / f"{CALL['id']}.json").exists()
+    assert "техническая ошибка" in capsys.readouterr().out
+
+
+def test_fetch_without_calls_explains_what_to_do(monkeypatch, capsys):
+    from voicebot import cli
+
+    monkeypatch.setattr(cli, "_client", lambda: FakeFetchClient({}))
+    assert main(["fetch", "--scenario", str(SCENARIO)]) == 1
+    assert "демо-странице" in capsys.readouterr().out
+
+
 def fake_client(responses):
     client = VapiClient("test-key")
     calls = iter(responses)

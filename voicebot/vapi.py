@@ -55,11 +55,19 @@ class VapiClient:
         запросе). Ассистент ищется по имени: есть — обновляем, нет — создаём.
         Возвращает (ассистент, создан ли новый).
         """
-        assistants = self._request("GET", "/assistant", params={"limit": 100})
-        existing = next((a for a in assistants if a.get("name") == assistant["name"]), None)
+        existing = self.find_assistant(assistant["name"])
         if existing:
             return self._request("PATCH", f"/assistant/{existing['id']}", json=assistant), False
         return self._request("POST", "/assistant", json=assistant), True
+
+    def find_assistant(self, name: str) -> dict | None:
+        assistants = self._request("GET", "/assistant", params={"limit": 100})
+        return next((a for a in assistants if a.get("name") == name), None)
+
+    def last_call(self, assistant_id: str) -> dict | None:
+        """Самый свежий звонок сохранённого ассистента: из браузера или дашборда Vapi."""
+        calls = self._request("GET", "/call", params={"assistantId": assistant_id, "limit": 1})
+        return calls[0] if calls else None
 
     def wait_for_result(
         self,

@@ -25,6 +25,7 @@ def append_csv(result: CallResult) -> None:
     """Таблица по сценарию: одна строка = один звонок, столбцы = ответы.
 
     Если в сценарий добавили вопрос, появится новый столбец, старые строки сохранятся.
+    Тот же звонок, сохранённый повторно (fetch ещё раз), заменяет свою строку.
     """
     path = RESULTS_DIR / f"{result.scenario}.csv"
     row = {
@@ -40,7 +41,7 @@ def append_csv(result: CallResult) -> None:
     if path.exists():
         with path.open(encoding="utf-8-sig", newline="") as f:
             reader = csv.DictReader(f)
-            rows = list(reader)
+            rows = [r for r in reader if r.get("call_id") != result.call_id]
             columns = list(reader.fieldnames or []) + [c for c in row if c not in (reader.fieldnames or [])]
     rows.append(row)
 
