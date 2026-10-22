@@ -297,7 +297,7 @@ footer {{ margin-top: 24px; color: var(--muted); font-size: 13px; }}
 <body>
 <main>
 <h1>Аналитика звонков</h1>
-<div class="sub">Сценарий <b>{scenario}</b> · {count} звонков · обновлено {generated}</div>
+<div class="sub">Сценарий <b>{scenario}</b> · звонков: {count} · обновлено {generated}</div>
 {body}
 <footer>Номера телефонов скрыты. Записи разговоров и транскрипты на эту страницу не попадают.</footer>
 </main>
