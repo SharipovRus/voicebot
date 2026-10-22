@@ -11,7 +11,7 @@ from .texts import texts
 _JSON_TYPES = {"string": "string", "number": "number", "boolean": "boolean", "enum": "string"}
 
 # Чем может закончиться звонок. Описания на языке сценария — в texts.py.
-OUTCOMES = ["completed", "partial", "no_service", "callback_requested", "refused", "wrong_number", "no_human"]
+OUTCOMES = ["completed", "partial", "not_relevant", "callback_requested", "refused", "wrong_number", "no_human"]
 REQUIRED_STANDARD = ["outcome", "summary"]
 
 

@@ -99,7 +99,7 @@ footer { margin-top: 32px; color: var(--muted); font-size: 13px; }
 
   <section class="card">
     <h2 data-t="demoTitle"></h2>
-    <p data-t="demoRole"></p>
+    <p id="demo-hint"></p>
     <blockquote id="first-message"></blockquote>
     <div class="controls">
       <button type="button" id="call-btn" class="primary" disabled></button>
@@ -138,7 +138,6 @@ const TEXT = {
     title: "Голосовой бот, который звонит и собирает данные",
     lead: "Бот звонит на любой номер, задаёт вопросы из сценария, а после разговора раскладывает ответы по полям. Здесь с ним можно поговорить прямо в браузере.",
     demoTitle: "Поговорите с ботом",
-    demoRole: "Вы — сотрудник автосервиса. Бот звонит по поручению клиента и узнаёт, делаете ли вы замену масла, сколько это стоит и когда можно приехать. Отвечайте как угодно: можно отказать, назвать цену частями или попросить перезвонить.",
     demoNote: "Нужен микрофон. Разговор длится не больше 5 минут. Это тот же бот, что звонит на телефоны, только без телефонной линии.",
     start: "Начать разговор", stop: "Завершить",
     idle: "", connecting: "Подключаюсь…", live: "Идёт разговор", ended: "Разговор завершён",
@@ -148,7 +147,7 @@ const TEXT = {
     bot: "Бот", you: "Вы",
     result: "Ответы бот извлечёт из разговора в течение минуты. id звонка:",
     collectsTitle: "Что бот узнаёт",
-    collectsAlso: "Плюс служебные поля для любого звонка: чем закончился разговор, когда перезвонить, комментарий и короткое резюме. Из всех звонков складывается аналитика: воронка, итоги, цена успешного звонка.",
+    collectsAlso: "Плюс служебные поля для любого звонка: чем закончился разговор, когда перезвонить, комментарий и короткое резюме. Из всех звонков складывается аналитика: воронка, причины, цена успешного звонка.",
     howTitle: "Как устроено",
     flow: [
       ["Сценарий YAML", "кто звонит, вопросы, правила, голос"],
@@ -170,7 +169,6 @@ const TEXT = {
     title: "A voice bot that makes calls and collects data",
     lead: "The bot calls any phone number, asks the questions from its script, and after the call turns the answers into structured fields. You can talk to it right here in the browser.",
     demoTitle: "Talk to the bot",
-    demoRole: "You work at a car repair shop. The bot calls on behalf of a customer to find out whether you do oil changes, what it costs and when they can come in. Answer however you like: say no, quote the price in parts, or ask it to call back later.",
     demoNote: "Needs a microphone. A conversation lasts at most 5 minutes. It is the same bot that calls phones, just without the phone line.",
     start: "Start the conversation", stop: "End",
     idle: "", connecting: "Connecting…", live: "Conversation in progress", ended: "Conversation ended",
@@ -180,7 +178,7 @@ const TEXT = {
     bot: "Bot", you: "You",
     result: "The bot will extract the answers from the conversation within a minute. Call id:",
     collectsTitle: "What the bot finds out",
-    collectsAlso: "Plus standard fields for every call: how it ended, when to call back, a comment and a short summary. All calls add up to analytics: the funnel, outcomes, cost per successful call.",
+    collectsAlso: "Plus standard fields for every call: how it ended, when to call back, a comment and a short summary. All calls add up to analytics: the funnel, reasons, cost per successful call.",
     howTitle: "How it works",
     flow: [
       ["YAML script", "who calls, questions, rules, voice"],
@@ -229,6 +227,7 @@ function render() {
     b.disabled = state === "connecting" || state === "live";
   });
   const s = scenario();
+  $("demo-hint").textContent = s ? s.demoHint : "";
   $("first-message").textContent = s ? (lang === "ru" ? `«${s.firstMessage}»` : `“${s.firstMessage}”`) : "";
   $("questions").replaceChildren(...(s ? s.questions : []).map((q) => Object.assign(document.createElement("li"), { textContent: q })));
   $("flow").replaceChildren(...t.flow.flatMap(([title, note], i) => {

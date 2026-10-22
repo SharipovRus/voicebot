@@ -24,7 +24,7 @@ NOT_REACHED = {"customer-did-not-answer", "customer-busy"}
 OUTCOME_LABELS = {
     "completed": "собрали все ответы",
     "partial": "часть ответов",
-    "no_service": "услугу не оказывают",
+    "not_relevant": "неактуально",
     "callback_requested": "просили перезвонить",
     "refused": "отказались говорить",
     "wrong_number": "не тот номер",

@@ -43,6 +43,7 @@ class Scenario:
     vapi: dict
     variables: dict[str, str]
     language: str = "ru"
+    demo_hint: str | None = None  # кого играет человек на демо-странице
 
 
 def load_scenario(path: str | Path, overrides: dict[str, str] | None = None) -> Scenario:
@@ -71,6 +72,12 @@ def load_scenario(path: str | Path, overrides: dict[str, str] | None = None) -> 
     if language not in TEXTS:
         raise ScenarioError(f"Язык '{language}' не поддерживается, можно: {', '.join(TEXTS)} (см. voicebot/texts.py)")
 
+    rules = raw.get("rules") or []
+    for rule in rules:
+        # «Текст: ещё текст» без кавычек YAML читает как словарь, а не как строку.
+        if not isinstance(rule, str):
+            raise ScenarioError(f"Правило прочиталось не как текст: {rule!r}. Если в нём есть «: », возьмите его в кавычки")
+
     questions = [_parse_question(q, render) for q in raw["questions"]]
     ids = [q.id for q in questions]
     duplicates = {i for i in ids if ids.count(i) > 1}
@@ -82,11 +89,12 @@ def load_scenario(path: str | Path, overrides: dict[str, str] | None = None) -> 
         persona=render(raw["persona"]),
         first_message=render(raw["first_message"]),
         questions=questions,
-        rules=[render(r) for r in raw.get("rules") or []],
+        rules=[render(r) for r in rules],
         end_message=render(raw["end_message"]),
         vapi=vapi,
         variables=variables,
         language=language,
+        demo_hint=render(raw.get("demo_hint")),
     )
 
 

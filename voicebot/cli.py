@@ -30,7 +30,7 @@ from .schema import build_output_schema
 from .sinks import RESULTS_DIR, publish
 from .vapi import VapiClient, VapiError
 
-DEFAULT_SCENARIO = "scenarios/sto_service.yaml"
+DEFAULT_SCENARIO = "scenarios/abandoned_application.yaml"
 SCENARIOS_DIR = Path("scenarios")
 SITE_DIR = Path("docs")
 
@@ -102,6 +102,7 @@ def cmd_site(args, scenario: Scenario) -> int:
                 "language": s.language,
                 "assistantId": saved["id"],
                 "firstMessage": s.first_message,
+                "demoHint": s.demo_hint or "",
                 "questions": [q.ask for q in s.questions],
                 "analytics": page,
                 "calls": len(report.calls),

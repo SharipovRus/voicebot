@@ -28,7 +28,7 @@ TEXTS = {
         "outcomes": {
             "completed": "получены ответы на все обязательные вопросы",
             "partial": "поговорили, но часть обязательных вопросов осталась без ответа",
-            "no_service": "собеседник не оказывает нужную услугу",
+            "not_relevant": "тема звонка неактуальна: собеседнику неинтересно или вопрос уже решён",
             "callback_requested": "попросили перезвонить позже",
             "refused": "отказались разговаривать",
             "wrong_number": "не та организация или не тот номер",
@@ -63,7 +63,7 @@ TEXTS = {
         "outcomes": {
             "completed": "all required questions were answered",
             "partial": "we talked, but some required questions were not answered",
-            "no_service": "they do not offer the service we need",
+            "not_relevant": "the topic is not relevant: not interested or already resolved",
             "callback_requested": "they asked to call back later",
             "refused": "they refused to talk",
             "wrong_number": "wrong organisation or wrong number",

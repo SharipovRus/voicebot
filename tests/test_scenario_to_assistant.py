@@ -10,8 +10,8 @@ from voicebot.scenario import ScenarioError, load_scenario
 from voicebot.schema import build_output_schema, standard_fields
 
 ROOT = Path(__file__).resolve().parents[1]
-SCENARIO = ROOT / "scenarios" / "sto_service.yaml"
-SCENARIO_EN = ROOT / "scenarios" / "car_service_en.yaml"
+SCENARIO = ROOT / "scenarios" / "abandoned_application.yaml"
+SCENARIO_EN = ROOT / "scenarios" / "abandoned_application_en.yaml"
 
 
 @pytest.fixture
@@ -43,13 +43,14 @@ vapi:
 
 def test_variables_are_substituted(scenario):
     assert "{{" not in scenario.persona + scenario.first_message
-    assert "Toyota Camry" in scenario.persona
+    assert "«Не подозрительный банк»" in scenario.persona
+    assert "на шаге подтверждения личности" in scenario.questions[0].ask
 
 
 def test_cli_variable_overrides_file():
-    s = load_scenario(SCENARIO, {"car": "Kia Rio 2020"})
-    assert "Kia Rio 2020" in s.persona
-    assert "Toyota" not in s.persona
+    s = load_scenario(SCENARIO, {"product": "кредитную карту"})
+    assert "кредитную карту" in s.persona + s.first_message
+    assert "дебетовую" not in s.persona + s.first_message
 
 
 def test_unknown_variable_is_an_error(tmp_path):
@@ -80,8 +81,9 @@ def test_schema_has_question_and_standard_fields(scenario):
     props = schema["properties"]
     assert [q.id for q in scenario.questions] == list(props)[: len(scenario.questions)]
     assert set(standard_fields("ru")) <= set(props)
-    assert props["price_total"]["type"] == "number"
-    assert props["does_service"]["type"] == "boolean"
+    assert "техническая ошибка" in props["drop_reason"]["enum"]
+    assert props["link_consent"]["type"] == "boolean"
+    assert "not_relevant" in props["outcome"]["enum"]
 
 
 def test_enum_question_becomes_enum_field(tmp_path):
@@ -101,6 +103,12 @@ def test_english_scenario_gets_english_scaffolding():
     assert "in English" in schema["properties"]["summary"]["description"]
     # те же вопросы, что в русском сценарии: аналитика и CSV устроены одинаково
     assert list(schema["properties"]) == list(build_output_schema(load_scenario(SCENARIO))["properties"])
+
+
+def test_rule_with_colon_needs_quotes(tmp_path):
+    text = MINIMAL.format(extra="", qtype="string") + "rules:\n  - Если неинтересно: заверши звонок\n"
+    with pytest.raises(ScenarioError, match="кавычки"):
+        load_scenario(write_yaml(tmp_path, text))
 
 
 def test_unknown_language_is_an_error(tmp_path):

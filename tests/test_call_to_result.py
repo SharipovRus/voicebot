@@ -13,8 +13,9 @@ from voicebot.scenario import load_scenario
 from voicebot.vapi import VapiClient
 
 ROOT = Path(__file__).resolve().parents[1]
-SCENARIO = ROOT / "scenarios" / "sto_service.yaml"
+SCENARIO = ROOT / "scenarios" / "abandoned_application.yaml"
 CALL = json.loads((ROOT / "tests" / "fixtures" / "ended_call.json").read_text(encoding="utf-8"))
+CSV_NAME = "abandoned_application.csv"
 
 
 @pytest.fixture
@@ -31,20 +32,22 @@ def results_in_tmp(tmp_path, monkeypatch):
 def test_parse_call(scenario):
     r = parse_call(CALL, scenario)
     assert r.phone == "+77011234567"
-    assert r.answers["price_total"] == 27000
+    assert r.answers["drop_reason"] == "техническая ошибка"
+    assert r.answers["link_consent"] is True
     assert r.answers["outcome"] == "completed"
-    assert list(r.answers)[0] == "does_service"  # порядок как в сценарии
+    assert list(r.answers)[0] == "drop_reason"  # порядок как в сценарии
+    assert r.answers["specialist_time"] is None  # вопрос с условием, его не задавали
     assert r.missing_required == []
-    assert "Абая" in r.transcript
+    assert "паспорта" in r.transcript
 
 
 def test_missing_answers_are_none_and_reported(scenario):
     call = json.loads(json.dumps(CALL))
     result = next(iter(call["artifact"]["structuredOutputs"].values()))["result"]
-    del result["nearest_slot"]
+    del result["link_consent"]
     r = parse_call(call, scenario)
-    assert r.answers["nearest_slot"] is None
-    assert r.missing_required == ["nearest_slot"]
+    assert r.answers["link_consent"] is None
+    assert r.missing_required == ["link_consent"]
 
 
 def test_call_without_outputs_still_parses(scenario):
@@ -56,23 +59,23 @@ def test_call_without_outputs_still_parses(scenario):
 def test_sinks_write_json_and_csv(scenario, results_in_tmp):
     sinks.publish(parse_call(CALL, scenario))
     saved = json.loads((results_in_tmp / "calls" / f"{CALL['id']}.json").read_text(encoding="utf-8"))
-    assert saved["answers"]["nearest_slot"] == "завтра в 11:00"
-    with (results_in_tmp / "sto_service.csv").open(encoding="utf-8-sig") as f:
+    assert saved["answers"]["still_interested"] is True
+    with (results_in_tmp / CSV_NAME).open(encoding="utf-8-sig") as f:
         rows = list(csv.DictReader(f))
-    assert rows[0]["price_total"] == "27000"
+    assert rows[0]["drop_reason"] == "техническая ошибка"
 
 
 def test_csv_gets_new_column_when_question_added(scenario, results_in_tmp):
     sinks.publish(parse_call(CALL, scenario))
     r = parse_call(CALL, scenario)
     r.call_id = "second"
-    r.answers["has_waiting_room"] = True  # как будто в сценарий добавили вопрос
+    r.answers["app_platform"] = "android"  # как будто в сценарий добавили вопрос
     sinks.publish(r)
-    with (results_in_tmp / "sto_service.csv").open(encoding="utf-8-sig") as f:
+    with (results_in_tmp / CSV_NAME).open(encoding="utf-8-sig") as f:
         rows = list(csv.DictReader(f))
     assert len(rows) == 2
-    assert rows[0]["has_waiting_room"] == ""
-    assert rows[1]["has_waiting_room"] == "True"
+    assert rows[0]["app_platform"] == ""
+    assert rows[1]["app_platform"] == "android"
 
 
 def fake_client(responses):
@@ -117,13 +120,13 @@ def test_save_assistant_finds_existing_by_name():
     def fake_request(method, path, **kwargs):
         sent.append((method, path))
         if method == "GET":
-            return [{"id": "a1", "name": "other"}, {"id": "a2", "name": "sto_service"}]
+            return [{"id": "a1", "name": "other"}, {"id": "a2", "name": "abandoned_application"}]
         return {"id": "a2" if method == "PATCH" else "new"}
 
     client._request = fake_request
-    assert client.save_assistant({"name": "sto_service"}) == ({"id": "a2"}, False)
+    assert client.save_assistant({"name": "abandoned_application"}) == ({"id": "a2"}, False)
     assert sent[-1] == ("PATCH", "/assistant/a2")  # такой уже есть — обновляем, а не плодим копии
-    assert client.save_assistant({"name": "car_service_en"}) == ({"id": "new"}, True)
+    assert client.save_assistant({"name": "abandoned_application_en"}) == ({"id": "new"}, True)
     assert sent[-1] == ("POST", "/assistant")
 
 
@@ -146,9 +149,10 @@ def test_site_builds_config_and_analytics_for_every_scenario(tmp_path, monkeypat
     data = json.loads(config.split("window.VOICEBOT = ", 1)[1].rstrip().rstrip(";"))
     assert data["publicKey"] == "pk-test"
     assert {s["language"]: s["assistantId"] for s in data["scenarios"]} == {
-        "en": "id-car_service_en",
-        "ru": "id-sto_service",
+        "en": "id-abandoned_application_en",
+        "ru": "id-abandoned_application",
     }
+    assert all(s["demoHint"] for s in data["scenarios"])  # подсказка для демо берётся из YAML
     for s in data["scenarios"]:
         assert (tmp_path / "docs" / s["analytics"]).exists()
 
