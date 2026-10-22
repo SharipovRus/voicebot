@@ -272,8 +272,15 @@ function addLine(role) {
   return line;
 }
 
+// call-start приходит не всегда (например, пока браузер спрашивает микрофон),
+// поэтому разговор считается начатым и по первой реплике или звуку бота.
+function markLive() {
+  if (state === "connecting") setState("live");
+}
+
 function onTranscript(m) {
   if (m.type !== "transcript") return;
+  markLive();
   const role = m.role === "assistant" ? "bot" : "you";
   if (!current || current.dataset.role !== role) current = addLine(role);
   current.querySelector(".text").textContent = m.transcript;
@@ -316,7 +323,8 @@ if (!config.publicKey) {
     // Пакет собран как CommonJS: на CDN класс лежит в default.default.
     const Vapi = typeof sdk.default === "function" ? sdk.default : sdk.default.default;
     vapi = new Vapi(config.publicKey);
-    vapi.on("call-start", () => setState("live"));
+    vapi.on("call-start", markLive);
+    vapi.on("speech-start", markLive);
     vapi.on("call-end", () => { setState("ended"); resultEl.hidden = !resultEl.childNodes.length; });
     vapi.on("message", onTranscript);
     vapi.on("error", (e) => { console.error(e); if (state !== "ended") setState("error", "error"); });
