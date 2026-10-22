@@ -1,0 +1,9 @@
+[project]
+name = "voicebot"
+version = "0.1.0"
+description = "Голосовой бот: звонит по номеру, задаёт вопросы из сценария и сохраняет ответы"
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

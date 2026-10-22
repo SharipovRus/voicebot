@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voice bot demo</title>
+<meta name="description" content="Голосовой бот, который звонит, задаёт вопросы из сценария и собирает ответы. A voice bot that calls, asks scripted questions and collects structured answers.">
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7; --surface: #fcfcfb; --border: rgba(11,11,11,0.10);
+  --text: #0b0b0b; --text-2: #52514e; --muted: #898781; --grid: #e1e0d9;
+  --accent: #2a78d6; --accent-ink: #ffffff; --accent-soft: #cde2fb; --danger: #d03b3b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --border: rgba(255,255,255,0.10);
+    --text: #f0efec; --text-2: #c3c2b7; --muted: #898781; --grid: #2c2c2a;
+    --accent: #3987e5; --accent-ink: #ffffff; --accent-soft: #184f95; --danger: #e66767;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --border: rgba(255,255,255,0.10);
+  --text: #f0efec; --text-2: #c3c2b7; --muted: #898781; --grid: #2c2c2a;
+  --accent: #3987e5; --accent-ink: #ffffff; --accent-soft: #184f95; --danger: #e66767;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--text);
+  font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 760px; margin: 0 auto; padding: 24px 16px 56px; }
+a { color: var(--accent); }
+.top { display: flex; justify-content: space-between; align-items: center; }
+.brand { font-weight: 600; letter-spacing: 0.02em; }
+.lang { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.lang button { border: 0; background: transparent; color: var(--text-2); font: inherit; font-size: 14px;
+  padding: 4px 12px; cursor: pointer; }
+.lang button[aria-pressed="true"] { background: var(--accent-soft); color: var(--text); font-weight: 600; }
+.lang button:disabled { cursor: not-allowed; opacity: 0.6; }
+h1 { font-size: 32px; line-height: 1.2; margin: 40px 0 12px; }
+h2 { font-size: 18px; margin: 0 0 12px; }
+.lead { color: var(--text-2); font-size: 18px; margin: 0; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px; margin-top: 20px; }
+.muted { color: var(--muted); }
+.small { font-size: 14px; }
+blockquote { margin: 12px 0 16px; padding: 10px 14px; border-left: 3px solid var(--accent); color: var(--text-2);
+  background: var(--page); border-radius: 0 8px 8px 0; }
+.controls { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.primary { border: 0; border-radius: 10px; padding: 12px 20px; font: inherit; font-weight: 600; cursor: pointer;
+  background: var(--accent); color: var(--accent-ink); }
+.primary.stop { background: var(--danger); }
+.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+#status { color: var(--text-2); font-size: 15px; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); margin-right: 6px; }
+.dot.live { background: #0ca30c; }
+.transcript { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; max-height: 340px; overflow-y: auto; }
+.transcript:empty { display: none; }
+.line { display: grid; grid-template-columns: 56px 1fr; gap: 8px; font-size: 15px; }
+.who { color: var(--muted); font-size: 13px; padding-top: 2px; }
+.line.bot .text { color: var(--text); }
+.line.you .text { color: var(--text-2); }
+.result { margin-top: 12px; font-size: 14px; color: var(--text-2); }
+.result code { font-size: 13px; word-break: break-all; }
+ol { margin: 0 0 12px; padding-left: 22px; }
+ol li { margin: 4px 0; }
+.flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; margin-bottom: 16px; }
+.step { flex: 1 1 120px; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; background: var(--page); }
+.step b { display: block; font-size: 14px; }
+.step span { display: block; font-size: 13px; color: var(--text-2); }
+.arrow { align-self: center; color: var(--muted); }
+ul.why { margin: 0; padding-left: 20px; }
+ul.why li { margin: 6px 0; }
+.links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+.links a { border: 1px solid var(--border); border-radius: 10px; padding: 10px 16px; text-decoration: none;
+  background: var(--surface); color: var(--text); font-weight: 500; }
+.links a:hover { border-color: var(--accent); }
+footer { margin-top: 32px; color: var(--muted); font-size: 13px; }
+@media (max-width: 560px) {
+  h1 { font-size: 26px; margin-top: 28px; }
+  .arrow { display: none; }
+  .step { flex-basis: 100%; }
+  .card { padding: 18px; }
+}
+</style>
+</head>
+<body>
+<main>
+  <div class="top">
+    <div class="brand">voicebot</div>
+    <div class="lang" role="group" aria-label="Language">
+      <button type="button" data-lang="ru">RU</button>
+      <button type="button" data-lang="en">EN</button>
+    </div>
+  </div>
+
+  <h1 data-t="title"></h1>
+  <p class="lead" data-t="lead"></p>
+
+  <section class="card">
+    <h2 data-t="demoTitle"></h2>
+    <p data-t="demoRole"></p>
+    <blockquote id="first-message"></blockquote>
+    <div class="controls">
+      <button type="button" id="call-btn" class="primary" disabled></button>
+      <span id="status"></span>
+    </div>
+    <div id="transcript" class="transcript" aria-live="polite"></div>
+    <div id="result" class="result" hidden></div>
+    <p class="muted small" data-t="demoNote"></p>
+  </section>
+
+  <section class="card">
+    <h2 data-t="collectsTitle"></h2>
+    <ol id="questions"></ol>
+    <p class="small" data-t="collectsAlso"></p>
+  </section>
+
+  <section class="card">
+    <h2 data-t="howTitle"></h2>
+    <div class="flow" id="flow"></div>
+    <ul class="why" id="why"></ul>
+  </section>
+
+  <nav class="links">
+    <a id="link-code" href="https://github.com/SharipovRus/voicebot" data-t="linkCode"></a>
+    <a id="link-analytics" href="#" data-t="linkAnalytics"></a>
+    <a id="link-readme" href="https://github.com/SharipovRus/voicebot#readme" data-t="linkReadme"></a>
+  </nav>
+
+  <footer data-t="footer"></footer>
+</main>
+
+<script src="config.js"></script>
+<script type="module">
+const TEXT = {
+  ru: {
+    title: "Голосовой бот, который звонит и собирает данные",
+    lead: "Бот звонит на любой номер, задаёт вопросы из сценария, а после разговора раскладывает ответы по полям. Здесь с ним можно поговорить прямо в браузере.",
+    demoTitle: "Поговорите с ботом",
+    demoRole: "Вы — сотрудник автосервиса. Бот звонит по поручению клиента и узнаёт, делаете ли вы замену масла, сколько это стоит и когда можно приехать. Отвечайте как угодно: можно отказать, назвать цену частями или попросить перезвонить.",
+    demoNote: "Нужен микрофон. Разговор длится не больше 5 минут. Это тот же бот, что звонит на телефоны, только без телефонной линии.",
+    start: "Начать разговор", stop: "Завершить",
+    idle: "", connecting: "Подключаюсь…", live: "Идёт разговор", ended: "Разговор завершён",
+    noKey: "Демо пока не настроено: нет публичного ключа Vapi.",
+    sdkError: "Не удалось загрузить голосовой модуль. Обновите страницу.",
+    micError: "Нужен доступ к микрофону.", error: "Ошибка соединения, попробуйте ещё раз.",
+    bot: "Бот", you: "Вы",
+    result: "Ответы бот извлечёт из разговора в течение минуты. id звонка:",
+    collectsTitle: "Что бот узнаёт",
+    collectsAlso: "Плюс служебные поля для любого звонка: чем закончился разговор, когда перезвонить, комментарий и короткое резюме. Из всех звонков складывается аналитика: воронка, итоги, цена успешного звонка.",
+    howTitle: "Как устроено",
+    flow: [
+      ["Сценарий YAML", "кто звонит, вопросы, правила, голос"],
+      ["Промпт и JSON-схема", "собираются кодом из сценария"],
+      ["Vapi", "телефония, распознавание речи, LLM, синтез голоса"],
+      ["Ответы по схеме", "извлекаются из транскрипта после звонка"],
+      ["JSON, CSV, аналитика", "по каждому звонку и по всем сразу"],
+    ],
+    why: [
+      "Всё поведение бота описано в одном YAML-файле. Новый вопрос, условие или язык — правка файла, а не кода. Английская версия этого бота — просто второй YAML.",
+      "Голосовую часть делает Vapi: телефонию, распознавание, перебивания, задержки. Логика и данные остаются в репозитории, платформу можно заменить.",
+      "Ответы извлекаются после звонка по JSON-схеме: разговор остаётся живым, а на выходе всегда одинаковая структура для таблицы и аналитики.",
+      "Звонит на номера любой страны: оператор (Twilio или свой SIP) подключается к Vapi, код от него не зависит.",
+    ],
+    linkCode: "Код на GitHub", linkAnalytics: "Аналитика звонков", linkReadme: "Подробно об устройстве",
+    footer: "Бот в первой фразе говорит, что он голосовой ассистент. Записи разговоров на этой странице не публикуются.",
+  },
+  en: {
+    title: "A voice bot that makes calls and collects data",
+    lead: "The bot calls any phone number, asks the questions from its script, and after the call turns the answers into structured fields. You can talk to it right here in the browser.",
+    demoTitle: "Talk to the bot",
+    demoRole: "You work at a car repair shop. The bot calls on behalf of a customer to find out whether you do oil changes, what it costs and when they can come in. Answer however you like: say no, quote the price in parts, or ask it to call back later.",
+    demoNote: "Needs a microphone. A conversation lasts at most 5 minutes. It is the same bot that calls phones, just without the phone line.",
+    start: "Start the conversation", stop: "End",
+    idle: "", connecting: "Connecting…", live: "Conversation in progress", ended: "Conversation ended",
+    noKey: "The demo is not configured yet: no Vapi public key.",
+    sdkError: "Could not load the voice module. Please reload the page.",
+    micError: "Microphone access is required.", error: "Connection error, please try again.",
+    bot: "Bot", you: "You",
+    result: "The bot will extract the answers from the conversation within a minute. Call id:",
+    collectsTitle: "What the bot finds out",
+    collectsAlso: "Plus standard fields for every call: how it ended, when to call back, a comment and a short summary. All calls add up to analytics: the funnel, outcomes, cost per successful call.",
+    howTitle: "How it works",
+    flow: [
+      ["YAML script", "who calls, questions, rules, voice"],
+      ["Prompt and JSON schema", "built from the script by code"],
+      ["Vapi", "telephony, speech recognition, LLM, speech synthesis"],
+      ["Answers by schema", "extracted from the transcript after the call"],
+      ["JSON, CSV, analytics", "per call and across all calls"],
+    ],
+    why: [
+      "All of the bot's behaviour lives in one YAML file. A new question, condition or language is a file edit, not a code change. The English version of this bot is just a second YAML file.",
+      "Vapi handles the voice layer: telephony, recognition, interruptions, latency. The logic and the data stay in the repository, and the platform can be swapped.",
+      "Answers are extracted after the call with a JSON schema: the conversation stays natural, and the output always has the same structure for tables and analytics.",
+      "It calls numbers in any country: the carrier (Twilio or your own SIP trunk) plugs into Vapi, the code does not depend on it.",
+    ],
+    linkCode: "Code on GitHub", linkAnalytics: "Call analytics", linkReadme: "How it works in detail",
+    footer: "The bot says it is a voice assistant in its first sentence. Call recordings are not published on this page.",
+  },
+};
+
+const config = window.VOICEBOT || { publicKey: "", scenarios: [] };
+const $ = (id) => document.getElementById(id);
+const btn = $("call-btn"), statusEl = $("status"), transcript = $("transcript"), resultEl = $("result");
+let lang = pickLanguage();
+let state = "idle"; // idle | connecting | live | ended | error
+let errorKey = null;
+let vapi = null;
+let current = null; // строка расшифровки, которая ещё дописывается
+
+function pickLanguage() {
+  const fromUrl = new URLSearchParams(location.search).get("lang");
+  if (TEXT[fromUrl]) return fromUrl;
+  try { const saved = localStorage.getItem("voicebot-lang"); if (TEXT[saved]) return saved; } catch {}
+  return (navigator.language || "").toLowerCase().startsWith("ru") ? "ru" : "en";
+}
+
+function scenario() {
+  return config.scenarios.find((s) => s.language === lang) || config.scenarios[0];
+}
+
+function render() {
+  const t = TEXT[lang];
+  document.documentElement.lang = lang;
+  document.querySelectorAll("[data-t]").forEach((el) => { el.textContent = t[el.dataset.t]; });
+  document.querySelectorAll(".lang button").forEach((b) => {
+    b.setAttribute("aria-pressed", String(b.dataset.lang === lang));
+    b.disabled = state === "connecting" || state === "live";
+  });
+  const s = scenario();
+  $("first-message").textContent = s ? (lang === "ru" ? `«${s.firstMessage}»` : `“${s.firstMessage}”`) : "";
+  $("questions").replaceChildren(...(s ? s.questions : []).map((q) => Object.assign(document.createElement("li"), { textContent: q })));
+  $("flow").replaceChildren(...t.flow.flatMap(([title, note], i) => {
+    const step = document.createElement("div");
+    step.className = "step";
+    step.append(Object.assign(document.createElement("b"), { textContent: title }), Object.assign(document.createElement("span"), { textContent: note }));
+    return i ? [Object.assign(document.createElement("span"), { className: "arrow", textContent: "→" }), step] : [step];
+  }));
+  $("why").replaceChildren(...t.why.map((w) => Object.assign(document.createElement("li"), { textContent: w })));
+  $("link-analytics").href = s ? s.analytics : "#";
+  renderControls();
+}
+
+function renderControls() {
+  const t = TEXT[lang];
+  const active = state === "connecting" || state === "live";
+  btn.textContent = active ? t.stop : t.start;
+  btn.classList.toggle("stop", active);
+  btn.disabled = !vapi || !scenario();
+  const message = errorKey ? t[errorKey] : t[state];
+  statusEl.innerHTML = "";
+  if (message) {
+    if (state === "live") statusEl.append(Object.assign(document.createElement("span"), { className: "dot live" }));
+    statusEl.append(message);
+  }
+}
+
+function setState(next, err = null) {
+  state = next;
+  errorKey = err;
+  render();
+}
+
+function addLine(role) {
+  const line = document.createElement("div");
+  line.className = `line ${role}`;
+  line.dataset.role = role;
+  line.append(Object.assign(document.createElement("span"), { className: "who", textContent: TEXT[lang][role] }),
+              Object.assign(document.createElement("span"), { className: "text" }));
+  transcript.append(line);
+  return line;
+}
+
+function onTranscript(m) {
+  if (m.type !== "transcript") return;
+  const role = m.role === "assistant" ? "bot" : "you";
+  if (!current || current.dataset.role !== role) current = addLine(role);
+  current.querySelector(".text").textContent = m.transcript;
+  if (m.transcriptType === "final") current = null;
+  transcript.scrollTop = transcript.scrollHeight;
+}
+
+btn.addEventListener("click", async () => {
+  if (state === "connecting" || state === "live") { vapi.stop(); return; }
+  transcript.replaceChildren();
+  resultEl.hidden = true;
+  current = null;
+  setState("connecting");
+  try {
+    const call = await vapi.start(scenario().assistantId);
+    if (call?.id) {
+      resultEl.replaceChildren(TEXT[lang].result + " ", Object.assign(document.createElement("code"), { textContent: call.id }));
+    }
+  } catch (e) {
+    console.error(e);
+    setState("error", /permission|notallowed/i.test(String(e?.message || e?.error || e)) ? "micError" : "error");
+  }
+});
+
+document.querySelectorAll(".lang button").forEach((b) => b.addEventListener("click", () => {
+  lang = b.dataset.lang;
+  try { localStorage.setItem("voicebot-lang", lang); } catch {}
+  transcript.replaceChildren();
+  resultEl.hidden = true;
+  setState("idle");
+}));
+
+render();
+if (!config.publicKey) {
+  setState("idle", "noKey");
+} else {
+  try {
+    // Версия SDK зафиксирована, чтобы обновление на CDN не сломало страницу.
+    const sdk = await import("https://cdn.jsdelivr.net/npm/@vapi-ai/web@2.7.1/+esm");
+    // Пакет собран как CommonJS: на CDN класс лежит в default.default.
+    const Vapi = typeof sdk.default === "function" ? sdk.default : sdk.default.default;
+    vapi = new Vapi(config.publicKey);
+    vapi.on("call-start", () => setState("live"));
+    vapi.on("call-end", () => { setState("ended"); resultEl.hidden = !resultEl.childNodes.length; });
+    vapi.on("message", onTranscript);
+    vapi.on("error", (e) => { console.error(e); if (state !== "ended") setState("error", "error"); });
+    renderControls();
+  } catch (e) {
+    console.error(e);
+    setState("idle", "sdkError");
+  }
+}
+</script>
+</body>
+</html>
