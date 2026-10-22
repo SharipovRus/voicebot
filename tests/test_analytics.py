@@ -130,7 +130,10 @@ def test_report_command_writes_page(tmp_path, monkeypatch, capsys, calls):
         sinks.save_json(call)
     out = tmp_path / "page.html"
     assert main(["report", "--scenario", str(SCENARIO), "--out", str(out)]) == 0
-    assert "собрали все ответы 2 (25%)" in capsys.readouterr().out
+    printed = capsys.readouterr().out
+    assert "собрали все ответы 2 (25%)" in printed
+    assert "без ответа чаще всего: still_interested" in printed  # 3 из 5, вопрос без условия
+    assert "drop_reason_details" not in printed  # вопрос с условием — пропуск не считается проблемой
     assert "Воронка" in out.read_text(encoding="utf-8")
 
 

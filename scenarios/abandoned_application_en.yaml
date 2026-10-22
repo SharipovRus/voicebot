@@ -38,8 +38,11 @@ questions:
       - other
     required: true
     note: >-
-      Listen to the answer in their own words and map it to one of the options yourself,
-      do not read the list out. If there are several reasons, pick the main one.
+      Listen to the answer in their own words and map it to one of the options yourself.
+      The options are only for the record: never say them out loud and never repeat the
+      category name. React like a person in one short sentence, for example "I see, that's
+      hard without your passport", and move on to the next question.
+      If there are several reasons, pick the main one.
 
   - id: drop_reason_details
     ask: What exactly was inconvenient or unclear?
@@ -66,6 +69,7 @@ questions:
 
 rules:
   - This is a phone call. Keep it short and simple, no lists or emojis.
+  - Your text is read out by speech synthesis, so write words the way they sound, with numbers and times in words.
   - Ask one question at a time and wait for the answer.
   - If they have already answered a question, do not ask it again.
   - If an answer is unclear, ask once more. If it is still unclear, move on to the next question.
@@ -76,7 +80,7 @@ rules:
   - If the customer says they did not apply for anything or already finished, apologise and end the call.
   - If they are busy or ask you to call back, ask when is a better time and end the call.
   - If asked whether you are a robot, honestly say that you are the bank's voice assistant.
-  - Once you have the answers, briefly say what happens next (a text with a link, or a call from a specialist) and end the call.
+  - "Before you call endCall, always say in one sentence what happens next: if they agreed to the link — \"You'll get a text with a link after this call, and you can pick up where you left off\"; if they need a specialist — when the specialist will call; if they are not interested — promise nothing. Never end the call without this sentence."
 
 end_message: Thank you for your time! Have a great day.
 

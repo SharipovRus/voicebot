@@ -181,7 +181,11 @@ def cmd_report(args, scenario: Scenario) -> int:
         f"Деньги: всего ${report.total_cost:.2f}, за звонок {_usd(report.cost_per_call)}, "
         f"за успешный звонок {_usd(report.cost_per_completed)}, за минуту {_usd(report.cost_per_minute)}"
     )
-    gaps = [q for q in report.questions if q.fill_rate is not None and q.answered < q.conversations]
+    # Вопросы с условием (ask_if) задаются не всем, их пропуск — не проблема.
+    gaps = [
+        q for q in report.questions
+        if not q.question.ask_if and q.fill_rate is not None and q.answered < q.conversations
+    ]
     for q in sorted(gaps, key=lambda q: q.fill_rate)[:3]:
         print(f"  без ответа чаще всего: {q.question.id} — ответ в {q.answered} из {q.conversations} разговоров")
     if report.callbacks:
