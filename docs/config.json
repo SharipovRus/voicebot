@@ -15,7 +15,7 @@
         "Когда специалисту удобно вам перезвонить?"
       ],
       "analytics": "analytics/abandoned_application.html",
-      "calls": 1
+      "calls": 2
     },
     {
       "name": "abandoned_application_en",
