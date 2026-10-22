@@ -1,6 +1,6 @@
 // Собирается командой `python -m voicebot site`, руками не править.
 window.VOICEBOT = {
-  "publicKey": "",
+  "publicKey": "e1c14ff9-5fa6-4e1f-8e1a-ec66e156581f",
   "scenarios": [
     {
       "name": "car_service_en",
