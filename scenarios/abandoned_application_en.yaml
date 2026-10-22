@@ -60,6 +60,11 @@ questions:
     type: boolean
     required: true
     ask_if: the customer is still interested
+    note: >-
+      Right after the answer, in the same reply, say what happens next. If they agreed:
+      "Great, you'll get a text with a link after this call, and you can pick up from the same step".
+      If they declined: "Sure, I won't send anything, you can continue in the app any time".
+      Only after this sentence move on to the next question or end the call.
 
   - id: specialist_time
     ask: When would it suit you for a specialist to call you back?
