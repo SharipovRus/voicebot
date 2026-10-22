@@ -1,5 +1,4 @@
-// Собирается командой `python -m voicebot site`, руками не править.
-window.VOICEBOT = {
+{
   "publicKey": "e1c14ff9-5fa6-4e1f-8e1a-ec66e156581f",
   "scenarios": [
     {
@@ -35,4 +34,4 @@ window.VOICEBOT = {
       "calls": 0
     }
   ]
-};
+}

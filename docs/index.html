@@ -131,7 +131,6 @@ footer { margin-top: 32px; color: var(--muted); font-size: 13px; }
   <footer data-t="footer"></footer>
 </main>
 
-<script src="config.js"></script>
 <script type="module">
 const TEXT = {
   ru: {
@@ -198,7 +197,11 @@ const TEXT = {
   },
 };
 
-const config = window.VOICEBOT || { publicKey: "", scenarios: [] };
+// Конфиг собирает `python -m voicebot site`. no-cache: после git push браузер сверяется
+// с сервером и не показывает старый сценарий из кэша.
+const config = await fetch("config.json", { cache: "no-cache" })
+  .then((r) => r.json())
+  .catch(() => ({ publicKey: "", scenarios: [] }));
 const $ = (id) => document.getElementById(id);
 const btn = $("call-btn"), statusEl = $("status"), transcript = $("transcript"), resultEl = $("result");
 let lang = pickLanguage();

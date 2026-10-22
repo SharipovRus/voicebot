@@ -85,7 +85,7 @@ def cmd_site(args, scenario: Scenario) -> int:
 
     Для каждого сценария из scenarios/: обновляет ассистента в Vapi, чтобы с ним можно
     было поговорить из браузера, и пересобирает страницу аналитики. Всё, что нужно
-    странице, пишется в docs/config.js.
+    странице, пишется в docs/config.json (руками его не правят).
     """
     client = _client()
     entries = []
@@ -112,10 +112,7 @@ def cmd_site(args, scenario: Scenario) -> int:
 
     public_key = os.getenv("VAPI_PUBLIC_KEY", "")
     config = json.dumps({"publicKey": public_key, "scenarios": entries}, ensure_ascii=False, indent=2)
-    (SITE_DIR / "config.js").write_text(
-        f"// Собирается командой `python -m voicebot site`, руками не править.\nwindow.VOICEBOT = {config};\n",
-        encoding="utf-8",
-    )
+    (SITE_DIR / "config.json").write_text(config + "\n", encoding="utf-8")
     print(f"\nГотово: {SITE_DIR / 'index.html'}. На сайт уходит после git push.")
     if not public_key:
         print("VAPI_PUBLIC_KEY не задан: кнопка разговора на странице работать не будет (см. README).")

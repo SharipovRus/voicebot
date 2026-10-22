@@ -192,12 +192,12 @@ python -m pytest                                 # тесты (без звонк
 список вопросов, схема устройства, аналитика по каждому сценарию.
 
 ```bash
-python -m voicebot site      # обновить ассистентов в Vapi, docs/config.js и docs/analytics/*
+python -m voicebot site      # обновить ассистентов в Vapi, docs/config.json и docs/analytics/*
 git add docs && git commit -m "site: update" && git push
 ```
 
 `site` проходит по всем `scenarios/*.yaml`: обновляет ассистента в Vapi (с ним говорит
-страница), пересобирает аналитику и пишет в `docs/config.js` публичный ключ, id ассистентов
+страница), пересобирает аналитику и пишет в `docs/config.json` публичный ключ, id ассистентов
 и вопросы. Страница грузит голосовой SDK Vapi (`@vapi-ai/web`, версия зафиксирована) с CDN.
 
 Чтобы кнопка разговора заработала, нужен публичный ключ Vapi (`VAPI_PUBLIC_KEY` в `.env`).

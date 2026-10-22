@@ -145,8 +145,7 @@ def test_site_builds_config_and_analytics_for_every_scenario(tmp_path, monkeypat
     monkeypatch.setenv("VAPI_PUBLIC_KEY", "pk-test")
 
     assert main(["site"]) == 0
-    config = (tmp_path / "docs" / "config.js").read_text(encoding="utf-8")
-    data = json.loads(config.split("window.VOICEBOT = ", 1)[1].rstrip().rstrip(";"))
+    data = json.loads((tmp_path / "docs" / "config.json").read_text(encoding="utf-8"))
     assert data["publicKey"] == "pk-test"
     assert {s["language"]: s["assistantId"] for s in data["scenarios"]} == {
         "en": "id-abandoned_application_en",
